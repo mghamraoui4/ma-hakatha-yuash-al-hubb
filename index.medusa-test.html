@@ -788,7 +788,8 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
   }
   cityEl.addEventListener("change", function () {
     var c = cities[cityEl.value]; ship = c ? { amount: Number(c.amount), days: Number(c.delay_days) } : null;
-    $("ship").textContent = c ? "التوصيل: " + c.amount + " د.م · المدة: " + c.delay_days + " يوم(أيام)" : "";
+    // Livraison offerte : le serveur renvoie 0 pour le client ; sinon on affiche le montant renvoyé.
+    $("ship").textContent = c ? (Number(c.amount) === 0 ? "التوصيل مجاني" : "التوصيل: " + c.amount + " د.م") + " · المدة: " + c.delay_days + " يوم(أيام)" : "";
     paint();
   });
   loadCities();
@@ -807,6 +808,8 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
     if (code === "INVALID_PHONE") return "رقم الهاتف غير صحيح. مثال: 06 00 00 00 00";
     if (code === "SPAM") return "تعذّر قبول الطلب. أعد المحاولة بعد لحظات.";
     if (code === "PENDING") return "طلبك قيد التسجيل، انتظر لحظات.";
+    if (code === "EBOOK_DISABLED") return "النسخة الرقمية غير متوفرة بعد.";
+    if (r.status === 404) return "التوصيل غير متوفر لهذه المدينة. اختر مدينة أخرى.";
     if (code === "INVALID") return "تحقّق من البيانات المدخلة.";
     return "تعذّر الإرسال. أعد المحاولة.";
   }
@@ -833,7 +836,7 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
       if (r.status === 200 || r.status === 201) {
         var o = r.body.order;
         $("fields").hidden = true; $("done").hidden = false;
-        $("doneTxt").textContent = "رقم الطلب: " + o.display_id + " · المبلغ: " + o.total + " د.م (يشمل التوصيل " + o.delivery.amount + " د.م). سيتصل بك فريقنا على " + val("f-phone") + " لتأكيد الطلب.";
+        $("doneTxt").textContent = "رقم الطلب: " + o.display_id + " · المبلغ: " + o.total + " د.م" + (Number(o.delivery.amount) === 0 ? " (التوصيل مجاني)" : " (يشمل التوصيل " + o.delivery.amount + " د.م)") + ". سيتصل بك فريقنا على " + val("f-phone") + " لتأكيد الطلب.";
         $("done").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
       } else {
         showErr(explain(r) + " [" + r.status + (r.body && r.body.code ? " " + r.body.code : "") + "]");

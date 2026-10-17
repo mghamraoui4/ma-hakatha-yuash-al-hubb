@@ -8,7 +8,7 @@ Apps Script a été retirée de la copie : elle ne peut pas écrire dans le Shee
 
 1. Démarrer la pile : dans le dossier du projet Medusa (`nabil_sakr`), `docker compose --profile backoffice up -d`.
 2. Récupérer la **clé publiable** Medusa (`pk_...`) : Admin Medusa → Paramètres → Clés API publiables
-   (ou la variable `PUBLIC_MEDUSA_PUBLISHABLE_KEY` du `.env`).
+   (la clé « Landing pages », liée au canal de vente).
 3. Servir cette page **sur le port 4321** (c'est l'origine autorisée par `STORE_CORS`) :
    ```powershell
    cd <dossier de ce dépôt>
@@ -25,5 +25,10 @@ Apps Script a été retirée de la copie : elle ne peut pas écrire dans le Shee
 - Le **prix** est celui de Medusa, pas celui de la page (`PRICE_DH = 186`) : le livre `livre-1` du seed vaut 120 MAD tant que
   `backoffice/data/books.json` n'a pas le vrai titre et le vrai prix. La page affiche un total estimé ; le montant réel est
   celui renvoyé par Medusa après la commande.
-- Le **transport** est ajouté au total (la page d'origine n'affichait que le prix du livre).
+- **Livraison offerte** : le prix de 186 DH inclut la livraison. La page affiche « التوصيل مجاني » dès que Medusa renvoie un
+  montant de livraison de 0 pour le client (réglage à faire côté back-office) ; tant que Medusa facture encore le tarif de
+  la ville, la page affiche ce montant.
+- **Limite de débit** : 10 commandes par 10 minutes et par IP. Pendant les essais, au-delà, toute commande depuis le même
+  poste est refusée (429) pendant quelques minutes : ce n'est pas une panne.
+- Les commandes de test **réservent du stock** : à annuler ou libérer avant le lancement.
 - Pas de Chatwoot : il est en veille, aucun ticket n'est créé.
