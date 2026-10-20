@@ -756,7 +756,7 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
   var COUNTRY = qs.get("country") || "ma";
   var BOOK_KEY = qs.get("book") || "livre-1";
   var form = $("orderForm"), wa = $("wa"), note = $("note"), sending = false, qty = 1;
-  var loadedAt = Date.now(), idemKey = uuid(), cities = {}, ship = null;
+  var loadedAt = Date.now(), idemKey = uuid(), cities = {}, ship = null, soldOut = false;
   function uuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     var h = "0123456789abcdef", s = "";
@@ -800,6 +800,16 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
     paint();
   });
   loadCities();
+  // Prix et disponibilité : lus dans Medusa (si la route répond), sinon on garde PRICE_DH.
+  function loadBook() {
+    api("/store/books/" + encodeURIComponent(BOOK_KEY)).then(function (r) {
+      var b = r.status === 200 && r.body && r.body.book;
+      if (!b) return;
+      if (b.price && Number(b.price.amount) > 0) { PRICE_DH = Number(b.price.amount); pe.textContent = "السعر: " + PRICE_DH + " د.م للنسخة"; paint(); }
+      if (b.available === false) { soldOut = true; wa.disabled = true; showErr("هذا الكتاب غير متوفر حاليًا."); }
+    }).catch(function (e) { console.warn("[medusa-test] book", e); });
+  }
+  loadBook();
 
   var REQ = ["f-name", "f-phone", "f-address", "f-city"];
   function bad() { return REQ.filter(function (id) { return id === "f-phone" ? val(id).replace(/\D/g, "").length < 9 : id === "f-address" ? val(id).length < 5 : !val(id); }); }
@@ -822,7 +832,7 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
   }
   form.addEventListener("submit", function (e) {
     e.preventDefault();
-    if (sending) return;
+    if (sending || soldOut) return;
     var b = bad();
     if (b.length) {
       REQ.forEach(function (id) { $(id).setAttribute("aria-invalid", String(b.indexOf(id) > -1)); });
@@ -851,7 +861,7 @@ var PRICE_DH = 186;                    // price per copy, in dirhams
     }).catch(function (err) {
       console.warn("[medusa-test] network", err);
       showErr("تعذّر الإرسال. تحقّق من الاتصال ومن إعداد CORS في Medusa.");
-    }).then(function () { sending = false; wa.disabled = false; wa.textContent = "أكّد طلبي"; });
+    }).then(function () { sending = false; wa.disabled = soldOut; wa.textContent = "أكّد طلبي"; });
   });
   $("again").addEventListener("click", function () { form.reset(); setQty(1); ship = null; $("ship").textContent = ""; idemKey = uuid(); loadedAt = Date.now(); $("done").hidden = true; $("fields").hidden = false; $("f-name").focus(); });
 
